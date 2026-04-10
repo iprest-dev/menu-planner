@@ -718,14 +718,9 @@ function todoistStatus(msg, type='info') {
 }
 
 async function todoistFetch(path, method='GET', body=null) {
-  const opts = {
-    method,
-    headers: {
-      'Authorization': `Bearer ${TODOIST_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    mode: 'cors'
-  };
+  const headers = { 'Authorization': `Bearer ${TODOIST_TOKEN}` };
+  if (body) headers['Content-Type'] = 'application/json';
+  const opts = { method, headers, mode: 'cors' };
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(TODOIST_API_BASE + path, opts);
   if (!res.ok) {
@@ -756,14 +751,16 @@ async function exportTodoist() {
     // Supprimer les tâches existantes du projet pour repartir propre
     todoistStatus('⏳ Nettoyage de la liste précédente...');
     const existingTasks = await todoistFetch(`/tasks?project_id=${projectId}`);
-    await Promise.all(existingTasks.map(t => todoistFetch(`/tasks/${t.id}`, 'DELETE')));
-
-    // Créer les sections par catégorie et les tâches
-    todoistStatus('⏳ Ajout des articles...');
+    for (const t of existingTasks) {
+      await todoistFetch(`/tasks/${t.id}`, 'DELETE');
+    }
 
     // Supprimer les sections existantes
+    todoistStatus('⏳ Préparation des catégories...');
     const existingSections = await todoistFetch(`/sections?project_id=${projectId}`);
-    await Promise.all(existingSections.map(s => todoistFetch(`/sections/${s.id}`, 'DELETE')));
+    for (const s of existingSections) {
+      await todoistFetch(`/sections/${s.id}`, 'DELETE');
+    }
 
     let totalPrix = 0;
     S.courses.forEach(cat => cat.items.forEach(i => { totalPrix += parseFloat(i.prix||0); }));
