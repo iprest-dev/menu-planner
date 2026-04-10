@@ -740,28 +740,27 @@ async function exportTodoist() {
   try {
     // Trouver ou créer le projet "Courses"
     todoistStatus('⏳ Recherche du projet Courses...');
-    const projectsRes = await todoistFetch('/projects/get_all');
-    const projects = projectsRes.results || projectsRes;
+    const projectsRes = await todoistFetch('/projects');
+    const projects = Array.isArray(projectsRes) ? projectsRes : (projectsRes.results || []);
     let project = projects.find(p => p.name.toLowerCase() === 'courses');
     if (!project) {
       todoistStatus('⏳ Création du projet Courses...');
-      project = await todoistFetch('/projects/add', 'POST', { name: 'Courses', color: 'green' });
+      project = await todoistFetch('/projects', 'POST', { name: 'Courses', color: 'green' });
     }
     const projectId = project.id;
 
     // Supprimer les tâches existantes
     todoistStatus('⏳ Nettoyage de la liste précédente...');
-    const tasksRes = await todoistFetch(`/tasks/get_all?project_id=${projectId}`);
-    const existingTasks = tasksRes.results || tasksRes;
+    const tasksRes = await todoistFetch(`/tasks?project_id=${projectId}`);
+    const existingTasks = Array.isArray(tasksRes) ? tasksRes : (tasksRes.results || []);
     for (const t of existingTasks) {
-      await todoistFetch(`/tasks/${t.id}/close`, 'POST', {});
       await todoistFetch(`/tasks/${t.id}`, 'DELETE');
     }
 
     // Supprimer les sections existantes
     todoistStatus('⏳ Préparation des catégories...');
-    const sectionsRes = await todoistFetch(`/sections/get_all?project_id=${projectId}`);
-    const existingSections = sectionsRes.results || sectionsRes;
+    const sectionsRes = await todoistFetch(`/sections?project_id=${projectId}`);
+    const existingSections = Array.isArray(sectionsRes) ? sectionsRes : (sectionsRes.results || []);
     for (const s of existingSections) {
       await todoistFetch(`/sections/${s.id}`, 'DELETE');
     }
@@ -773,18 +772,16 @@ async function exportTodoist() {
     for (const cat of S.courses) {
       if (!cat.items.length) continue;
 
-      // Créer une section pour la catégorie
-      const section = await todoistFetch('/sections/add', 'POST', {
+      const section = await todoistFetch('/sections', 'POST', {
         project_id: projectId,
         name: cat.nom
       });
 
-      // Créer les tâches dans cette section
       for (const item of cat.items) {
         const label = item.prix
           ? `${item.nom} — ${item.qte} (~${parseFloat(item.prix).toFixed(2)}€)`
           : `${item.nom} — ${item.qte}`;
-        await todoistFetch('/tasks/add', 'POST', {
+        await todoistFetch('/tasks', 'POST', {
           project_id: projectId,
           section_id: section.id,
           content: label
@@ -792,9 +789,8 @@ async function exportTodoist() {
       }
     }
 
-    // Tâche récapitulative budget
     if (totalPrix > 0) {
-      await todoistFetch('/tasks/add', 'POST', {
+      await todoistFetch('/tasks', 'POST', {
         project_id: projectId,
         content: `💰 Budget estimé total : ${totalPrix.toFixed(2)}€`
       });
@@ -807,7 +803,7 @@ async function exportTodoist() {
   } catch(e) {
     let msg = e.message;
     if (e.message === 'Failed to fetch') {
-      msg = 'Impossible de joindre Todoist. Vérifiez votre connexion internet, ou que votre navigateur ne bloque pas les requêtes.';
+      msg = 'Impossible de joindre Todoist. Vérifiez votre connexion internet.';
     }
     todoistStatus('❌ Erreur : ' + msg, 'err');
     btn.disabled = false;
