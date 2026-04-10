@@ -534,14 +534,14 @@ Desserts : ${dessertInstr}
 ${consigne ? 'Consigne supplémentaire : '+consigne:''}
 Jours : ${joursNoms.join(', ')}.
 Utilise en priorité les plats disponibles. Tu peux proposer 1 ou 2 plats supplémentaires simples si nécessaire.
-Pour chaque jour, estime aussi le coût approximatif du repas (dîner + dessert) pour ${S.nbPers} personnes en euros (ex: "8€", "12€"). Sois réaliste avec les prix français actuels.
 IMPORTANT : Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans backticks, sans texte avant ou après :
-{"jours":[{"jour":"Lundi","plat":"Nom exact du plat","dessert":"Nom du dessert ou chaîne vide","budget":"10€"}]}`;
+{"jours":[{"jour":"Lundi","plat":"Nom exact du plat","dessert":"Nom du dessert ou chaîne vide"}]}`;
   try {
     let rep = await callClaude(prompt, 700);
     rep = rep.replace(/```json|```/g,'').trim();
     const idx1 = rep.indexOf('{'), idx2 = rep.lastIndexOf('}');
     if (idx1 !== -1 && idx2 !== -1) rep = rep.slice(idx1, idx2+1);
+    rep = rep.replace(/[\u0000-\u001F\u007F]/g, ' ');
     const parsed = JSON.parse(rep);
     S.menu = parsed.jours;
     txt.className='ai-text'; txt.textContent='✅ Menu généré ! Ouverture...';
@@ -571,14 +571,7 @@ function renderMenu() {
   if (!S.menu.length) { empty.style.display='block'; content.style.display='none'; return; }
   empty.style.display='none'; content.style.display='block';
 
-  const totalBudget = S.menu.reduce((sum,j) => {
-    const m = (j.budget||'').match(/(\d+)/);
-    return sum + (m ? parseInt(m[1]) : 0);
-  }, 0);
-  const budgetHtml = totalBudget > 0
-    ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">Budget estimé semaine : <strong style="color:var(--green)">${totalBudget}€</strong> pour ${S.nbPers} personnes</div>`
-    : '';
-  document.getElementById('menuBudget').innerHTML = budgetHtml;
+  document.getElementById('menuBudget').innerHTML = '';
 
   document.getElementById('menuGrid').innerHTML = S.menu.map((j,idx)=>`
     <div class="day-card">
@@ -601,14 +594,6 @@ function renderMenu() {
 
 function updateMenuPlat(idx, field, val) {
   S.menu[idx][field] = val;
-  const totalBudget = S.menu.reduce((sum,j) => {
-    const m = (j.budget||'').match(/(\d+)/);
-    return sum + (m ? parseInt(m[1]) : 0);
-  }, 0);
-  if (totalBudget > 0) {
-    document.getElementById('menuBudget').innerHTML =
-      `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">Budget estimé semaine : <strong style="color:var(--green)">${totalBudget}€</strong> pour ${S.nbPers} personnes</div>`;
-  }
 }
 
 /* ---- GENERER COURSES ---- */
@@ -626,26 +611,45 @@ async function genCourses() {
   const prompt = `Liste de courses complète pour ${S.nbPers} personnes. Menu de la semaine :
 ${menuStr}
 
-Ingrédients connus par plat :
+Ingredients connus par plat :
 ${platsStr}
 
-Génère la liste de courses avec quantités adaptées à ${S.nbPers} personnes. Consolide les doublons.
-Pour chaque article, estime aussi le prix approximatif en euros (prix supermarché français actuel, ex: "2.50").
-IMPORTANT : Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans backticks :
+Genere la liste de courses avec quantites adaptees a ${S.nbPers} personnes. Consolide les doublons.
+Pour chaque article, estime le prix approximatif en euros (supermarche francais, ex: "2.50").
+IMPORTANT : Reponds UNIQUEMENT avec du JSON valide, sans markdown, sans backticks, sans caracteres speciaux dans les cles :
 {"categories":[
-  {"nom":"🥩 Viandes & poissons","items":[{"nom":"Poulet","qte":"700g","prix":"6.50"}]},
-  {"nom":"🥦 Légumes & fruits","items":[]},
-  {"nom":"🥚 Produits frais","items":[]},
-  {"nom":"🍝 Épicerie sèche","items":[]},
-  {"nom":"🧊 Surgelés","items":[]},
-  {"nom":"🍮 Desserts","items":[]}
+  {"nom":"Viandes et poissons","items":[{"nom":"Poulet","qte":"700g","prix":"6.50"}]},
+  {"nom":"Legumes et fruits","items":[]},
+  {"nom":"Produits frais","items":[]},
+  {"nom":"Epicerie seche","items":[]},
+  {"nom":"Surgeles","items":[]},
+  {"nom":"Desserts","items":[]}
 ]}`;
+
+  const EMOJI_CATS = {
+    'Viandes et poissons': '🥩 Viandes & poissons',
+    'Legumes et fruits': '🥦 Légumes & fruits',
+    'Produits frais': '🥚 Produits frais',
+    'Epicerie seche': '🍝 Épicerie sèche',
+    'Surgeles': '🧊 Surgelés',
+    'Desserts': '🍮 Desserts'
+  };
+
   try {
-    let rep = await callClaude(prompt, 1200);
+    let rep = await callClaude(prompt, 1400);
+    // Nettoyage robuste
     rep = rep.replace(/```json|```/g,'').trim();
+    // Extraire uniquement le JSON entre { et }
     const idx1=rep.indexOf('{'), idx2=rep.lastIndexOf('}');
     if (idx1!==-1 && idx2!==-1) rep=rep.slice(idx1,idx2+1);
-    S.courses = JSON.parse(rep).categories;
+    // Nettoyer les caractères de contrôle
+    rep = rep.replace(/[\u0000-\u001F\u007F]/g, ' ');
+    const parsed = JSON.parse(rep);
+    // Remettre les emojis sur les catégories
+    S.courses = parsed.categories.map(cat => ({
+      ...cat,
+      nom: EMOJI_CATS[cat.nom] || cat.nom
+    }));
     aiBox.style.display='none';
     renderCoursesList();
   } catch(e) {
