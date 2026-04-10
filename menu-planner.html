@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Menu Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F7F4EF; --warm: #EDE8DF; --brown: #3D2B1F; --brown-mid: #7A5C4A;
+    --brown-light: #B8956A; --accent: #C84B2F; --accent-light: #F0D5CD;
+    --green: #4A7C59; --green-light: #D6EAD9; --gold: #D4A843; --gold-light: #F5EDCC;
+    --text: #2A1F16; --text-muted: #8A7060; --border: #DDD5C8; --white: #FFFFFF;
+    --radius: 12px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--text); min-height: 100vh; font-size: 15px; }
+
+  header { background: var(--brown); padding: 1.2rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; position: sticky; top: 0; z-index: 100; }
+  header h1 { font-family: 'Playfair Display', serif; color: var(--cream); font-size: 20px; font-weight: 500; }
+  header h1 span { color: var(--gold); }
+  .api-zone { display: flex; align-items: center; gap: 8px; }
+  .api-zone input { padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid #6A4A35; background: rgba(255,255,255,0.08); color: var(--cream); font-size: 12px; width: 260px; font-family: 'DM Sans', sans-serif; outline: none; }
+  .api-zone input::placeholder { color: #9A7A66; }
+  .api-dot { width: 8px; height: 8px; border-radius: 50%; background: #666; flex-shrink: 0; transition: background 0.3s; }
+  .api-dot.ok { background: #5CB85C; }
+  .api-dot.err { background: var(--accent); }
+
+  .tabs { display: flex; background: var(--warm); border-bottom: 1px solid var(--border); padding: 0 2rem; overflow-x: auto; }
+  .tab { padding: 13px 18px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; user-select: none; }
+  .tab:hover { color: var(--brown); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 2rem; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1rem; }
+  .card-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 500; color: var(--brown); margin-bottom: 1rem; }
+
+  label { font-size: 12px; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  input[type=text], input[type=number], input[type=password], select, textarea {
+    width: 100%; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: var(--cream);
+    outline: none; transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--brown-light); }
+  textarea { resize: vertical; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .mb { margin-bottom: 12px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--white); color: var(--text); transition: all 0.15s; }
+  .btn:hover { background: var(--warm); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:hover { background: #B03E26; }
+  .btn-green { background: var(--green); color: white; border-color: var(--green); }
+  .btn-green:hover { background: #3A6347; }
+  .btn-gold { background: var(--gold); color: var(--brown); border-color: var(--gold); }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; border: 1px solid var(--border); cursor: pointer; color: var(--text-muted); background: var(--white); transition: all 0.15s; user-select: none; }
+  .chip.on { background: var(--brown); color: var(--cream); border-color: var(--brown); }
+
+  .ai-box { background: var(--gold-light); border: 1px solid #E8C97A; border-radius: var(--radius); padding: 1rem 1.25rem; margin: 1rem 0; }
+  .ai-label { font-size: 11px; font-weight: 500; color: #7A5C10; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ai-text { font-size: 14px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+  .thinking { animation: pulse 1s infinite; color: var(--text-muted); font-style: italic; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.4} }
+
+  .cat-section { margin-bottom: 1.2rem; }
+  .cat-label { font-size: 11px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .plats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 7px; }
+  .plat-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 11px; background: var(--cream); border: 1px solid var(--border); border-radius: var(--radius-sm); gap: 6px; }
+  .plat-name { font-size: 13px; font-weight: 500; }
+  .plat-time { font-size: 11px; color: var(--text-muted); }
+  .btn-del { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 13px; padding: 2px 4px; }
+  .btn-del:hover { color: var(--accent); }
+
+  .add-form { background: var(--warm); border: 1px dashed var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; display: none; }
+  .add-form.open { display: block; }
+
+  .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+  .day-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .day-head { background: var(--brown); padding: 8px 14px; color: var(--cream); font-size: 13px; font-weight: 500; }
+  .day-body { padding: 12px 14px; }
+  .r-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 3px; }
+  .r-plat { font-size: 14px; font-weight: 500; }
+  .r-dessert { font-size: 12px; color: var(--text-muted); }
+  .day-sep { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+  .prog-bar { height: 4px; background: var(--border); border-radius: 2px; margin: 8px 0 4px; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.3s; }
+  .courses-cat { margin-bottom: 1.5rem; }
+  .courses-cat-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--brown); padding-bottom: 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+  .course-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--warm); cursor: pointer; user-select: none; }
+  .course-row:last-child { border-bottom: none; }
+  .cb { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .cb.on { background: var(--green); border-color: var(--green); }
+  .cb.on::after { content:''; display:block; width:10px; height:6px; border-left:2px solid white; border-bottom:2px solid white; transform:rotate(-45deg) translateY(-1px); }
+  .c-name { flex: 1; font-size: 14px; }
+  .c-name.done { text-decoration: line-through; color: var(--text-muted); }
+  .c-qty { font-size: 12px; color: var(--text-muted); min-width: 60px; text-align: right; }
+
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
+  .empty p { font-size: 14px; line-height: 1.8; }
+  .menu-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem; }
+
+  .notice { background: var(--accent-light); border: 1px solid #E8B8A8; border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; color: #8A2515; margin-bottom: 1rem; display: none; }
+  .notice.show { display: block; }
+
+  .day-edit { width: 100%; padding: 5px 7px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--text); background: var(--cream); outline: none; margin-top: 3px; cursor: pointer; }
+  .day-edit:focus { border-color: var(--brown-light); }
+  .budget-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--green-light); color: #2A5C38; font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 12px; margin-top: 6px; }
+
+  @media (max-width: 640px) {
+    main { padding: 1rem; }
+    .row2, .row3 { grid-template-columns: 1fr; }
+    header { padding: 1rem; }
+    .api-zone input { width: 180px; }
+  }
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<header>
+  <h1>Menu <span>Planner</span></h1>
+  <div class="api-zone">
+    <div class="api-dot" id="apiDot" title="Statut clé API"></div>
+    <input type="password" id="apiKey" placeholder="Clé API Anthropic  sk-ant-..." oninput="saveKey()" autocomplete="off">
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="goTab('plats',this)">📚 Mes plats</div>
+  <div class="tab" onclick="goTab('generer',this)">✨ Générer un menu</div>
+  <div class="tab" onclick="goTab('menu',this)">📅 Mon menu</div>
+  <div class="tab" onclick="goTab('courses',this)">🛒 Courses</div>
+</div>
+
+<main>
+
+  <!-- PLATS -->
+  <div class="section active" id="s-plats">
+    <div class="notice" id="noticeKey">⚠️ Saisissez votre clé API Anthropic dans le champ en haut à droite pour utiliser les fonctions IA. Obtenez-la sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.</div>
+    <div class="card">
+      <div class="card-title">📚 Mes plats favoris</div>
+      <div class="btns">
+        <button class="btn btn-primary btn-sm" onclick="toggleAddForm()">+ Ajouter un plat</button>
+        <button class="btn btn-gold btn-sm" onclick="suggestPlat()">✨ Suggestion IA</button>
+        <button class="btn btn-sm" onclick="exportPlats()" title="Télécharger la liste de plats">⬇ Exporter</button>
+        <button class="btn btn-sm" onclick="document.getElementById('importFile').click()" title="Importer une liste de plats">⬆ Importer</button>
+        <input type="file" id="importFile" accept=".json" style="display:none" onchange="importPlats(event)">
+      </div>
+      <div class="add-form" id="addForm">
+        <div class="row3">
+          <div><label>Nom du plat</label><input type="text" id="nNom" placeholder="Ex: Tarte flambée"></div>
+          <div><label>Catégorie</label>
+            <select id="nCat">
+              <option>Pâtes & riz</option><option>Viande</option><option>Poisson</option>
+              <option>Végétarien</option><option>Pizza & galettes</option><option>Œufs</option>
+              <option>Salade</option><option>Soupe</option><option>Autre</option>
+            </select>
+          </div>
+          <div><label>Temps (min)</label><input type="number" id="nTime" placeholder="30" min="5" max="180"></div>
+        </div>
+        <div class="mb"><label>Ingrédients (séparés par des virgules)</label><input type="text" id="nIngs" placeholder="pâtes, lardons, crème, parmesan"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="addPlat()">Ajouter</button>
+          <button class="btn btn-sm" onclick="toggleAddForm()">Annuler</button>
+        </div>
+      </div>
+      <div id="aiSugBox" class="ai-box" style="display:none">
+        <div class="ai-label">✨ Suggestions IA</div>
+        <div class="ai-text" id="aiSugTxt"></div>
+        <div id="aiSugActions" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
+      <div id="platsWrap"></div>
+    </div>
+  </div>
+
+  <!-- GENERER -->
+  <div class="section" id="s-generer">
+    <div class="card">
+      <div class="card-title">⚙️ Critères du menu</div>
+      <div class="row2">
+        <div><label>Nombre de personnes</label><input type="number" id="cPers" value="5" min="1" max="20"></div>
+        <div><label>Nombre de jours</label><input type="number" id="cJours" value="7" min="1" max="14"></div>
+      </div>
+      <div class="mb">
+        <label>Desserts</label>
+        <div class="chips">
+          <div class="chip on" onclick="chip1(this,'dessert','oui')">Oui, simples</div>
+          <div class="chip" onclick="chip1(this,'dessert','non')">Non</div>
+          <div class="chip" onclick="chip1(this,'dessert','tout-fait')">Tout faits uniquement</div>
+        </div>
+      </div>
+      <div class="mb">
+        <label>Priorités</label>
+        <div class="chips">
+          <div class="chip on" onclick="chipN(this,'priorites','rapide')">⚡ Rapide</div>
+          <div class="chip on" onclick="chipN(this,'priorites','équilibré')">🥗 Équilibré</div>
+          <div class="chip" onclick="chipN(this,'priorites','économique')">💰 Économique</div>
+          <div class="chip" onclick="chipN(this,'priorites','varié')">🌈 Varié</div>
+        </div>
+      </div>
+      <div class="mb">
+        <label>Consigne libre (optionnel)</label>
+        <textarea id="cConsigne" rows="2" placeholder="Ex: pas de pâtes deux fois de suite, repas léger le vendredi..."></textarea>
+      </div>
+      <button class="btn btn-primary" id="btnGen" onclick="genMenu()" style="width:100%;justify-content:center;padding:12px;font-size:14px">
+        ✨ Générer le menu avec l'IA
+      </button>
+    </div>
+    <div id="genBox" class="ai-box" style="display:none">
+      <div class="ai-label">✨ Claude</div>
+      <div class="ai-text thinking" id="genTxt">Génération en cours...</div>
+    </div>
+  </div>
+
+  <!-- MENU -->
+  <div class="section" id="s-menu">
+    <div id="menuEmpty" class="empty"><p>Aucun menu généré.<br>Allez dans <strong>✨ Générer un menu</strong> pour commencer.</p></div>
+    <div id="menuContent" style="display:none">
+      <div class="menu-top">
+        <div>
+          <span style="font-family:'Playfair Display',serif;font-size:18px;color:var(--brown)">Menu de la semaine</span>
+          <div id="menuBudget"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm" onclick="goTab('generer',document.querySelectorAll('.tab')[1])">↺ Régénérer</button>
+          <button class="btn btn-green btn-sm" onclick="genCourses()">🛒 Générer les courses</button>
+        </div>
+      </div>
+      <div class="menu-grid" id="menuGrid"></div>
+    </div>
+  </div>
+
+  <!-- COURSES -->
+  <div class="section" id="s-courses">
+    <div id="coursesEmpty" class="empty"><p>Aucune liste générée.<br>Générez d'abord un menu, puis cliquez sur <strong>🛒 Générer les courses</strong>.</p></div>
+    <div id="coursesContent" style="display:none">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div class="card-title" style="margin:0">🛒 Liste de courses</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--text-muted)" id="progLabel">0 / 0 cochés</span>
+            <button class="btn btn-sm" onclick="resetCb()">↺ Tout décocher</button>
+            <button class="btn btn-green btn-sm" id="btnSheets" onclick="exportSheets()">📊 Exporter Google Sheets</button>
+          </div>
+        </div>
+        <div id="sheetsStatus" style="display:none;font-size:13px;padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:10px"></div>
+        <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+        <div id="coursesAiBox" class="ai-box" style="display:none">
+          <div class="ai-label">✨ Claude calcule...</div>
+          <div class="ai-text thinking" id="coursesAiTxt">Calcul des quantités...</div>
+        </div>
+        <div id="coursesList"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+const S = {
+  plats: [
+    {id:1,nom:"Spaghettis bolognaise",cat:"Pâtes & riz",time:30,ings:["pâtes","bœuf haché","tomate","oignon","carotte"]},
+    {id:2,nom:"Pâtes carbonara",cat:"Pâtes & riz",time:20,ings:["pâtes","lardons","œufs","parmesan","crème"]},
+    {id:3,nom:"Pâtes pesto",cat:"Pâtes & riz",time:15,ings:["pâtes","pesto","parmesan"]},
+    {id:4,nom:"Gratin de pâtes",cat:"Pâtes & riz",time:40,ings:["pâtes","gruyère","béchamel","lardons"]},
+    {id:5,nom:"Gnocchis poêlés & légumes",cat:"Pâtes & riz",time:20,ings:["gnocchis","courgette","tomate","basilic"]},
+    {id:6,nom:"Galettes complètes",cat:"Pizza & galettes",time:20,ings:["galettes blé noir","œufs","jambon","gruyère"]},
+    {id:7,nom:"Galettes chèvre miel",cat:"Pizza & galettes",time:20,ings:["galettes blé noir","chèvre","miel","noix"]},
+    {id:8,nom:"Croque monsieur",cat:"Pizza & galettes",time:15,ings:["pain de mie","jambon","gruyère","béchamel"]},
+    {id:9,nom:"Pizza fraîche",cat:"Pizza & galettes",time:5,ings:["pizza du commerce"]},
+    {id:10,nom:"Fajitas de poulet",cat:"Viande",time:25,ings:["poulet","poivrons","oignon","tortillas","épices tex-mex"]},
+    {id:11,nom:"Poêlée de saumon & riz",cat:"Poisson",time:20,ings:["saumon","riz","citron","haricots verts"]},
+    {id:12,nom:"Sushis Auchan",cat:"Poisson",time:5,ings:["sushis du commerce"]},
+    {id:13,nom:"Omelette",cat:"Œufs",time:15,ings:["œufs","lardons","gruyère"]},
+    {id:14,nom:"Œufs à la coque",cat:"Œufs",time:10,ings:["œufs","pain","beurre"]},
+    {id:15,nom:"Poêlée de légumes",cat:"Végétarien",time:20,ings:["courgette","poivron","oignon","tomate","herbes de Provence"]},
+    {id:16,nom:"Pommes de terre sautées",cat:"Végétarien",time:25,ings:["pommes de terre","ail","persil","huile"]},
+    {id:17,nom:"Salade riz thon maïs",cat:"Salade",time:15,ings:["riz","thon","maïs","tomate","vinaigrette"]},
+    {id:18,nom:"Salade avocat crevettes pamplemousse",cat:"Salade",time:15,ings:["avocat","crevettes","pamplemousse","salade verte","vinaigrette"]},
+  ],
+  desserts: [
+    "Yaourts nature","Yaourts aux fruits","Petits suisses","Compote de fruits","Tiramisu",
+    "Bananes","Pommes","Kiwi","Mousse au chocolat","Crème caramel","Île flottante",
+    "Riz au lait","Danette","Compote en gourde"
+  ],
+  criteres: { dessert:'oui', contraintes:[], priorites:['rapide','équilibré'] },
+  menu: [], courses: [], nbPers: 5, nextId: 19
+};
+
+/* ---- CLE API ---- */
+function getKey() { return document.getElementById('apiKey').value.trim(); }
+
+function saveKey() {
+  const k = getKey();
+  localStorage.setItem('mp_key', k);
+  const dot = document.getElementById('apiDot');
+  const notice = document.getElementById('noticeKey');
+  if (k.startsWith('sk-ant-') || k.startsWith('sk-')) {
+    dot.className='api-dot ok'; dot.title='Clé API valide';
+    notice.classList.remove('show');
+  } else if (k.length > 0) {
+    dot.className='api-dot err'; dot.title='Format de clé invalide';
+  } else {
+    dot.className='api-dot'; dot.title='Clé API non saisie';
+    notice.classList.add('show');
+  }
+}
+
+window.addEventListener('load', () => {
+  const savedKey = localStorage.getItem('mp_key');
+  if (savedKey) { document.getElementById('apiKey').value = savedKey; saveKey(); }
+  else { document.getElementById('noticeKey').classList.add('show'); }
+
+  const savedPlats = localStorage.getItem('mp_plats');
+  if (savedPlats) {
+    try {
+      const parsed = JSON.parse(savedPlats);
+      if (Array.isArray(parsed) && parsed.length) {
+        S.plats = parsed;
+        S.nextId = Math.max(...parsed.map(p=>p.id)) + 1;
+      }
+    } catch(e) {}
+  }
+  renderPlats();
+});
+
+function savePlats() {
+  localStorage.setItem('mp_plats', JSON.stringify(S.plats));
+}
+
+function exportPlats() {
+  const data = JSON.stringify({ version: 1, plats: S.plats }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'menu-planner-plats.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importPlats(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      const plats = data.plats || data;
+      if (!Array.isArray(plats)) throw new Error("Format invalide");
+      const action = confirm(`Fichier contient ${plats.length} plat(s).\n\nCliquez OK pour remplacer la liste actuelle, ou Annuler pour fusionner avec la liste existante.`);
+      if (action) {
+        S.plats = plats;
+      } else {
+        const existingNoms = S.plats.map(p=>p.nom.toLowerCase());
+        const nouveaux = plats.filter(p => !existingNoms.includes(p.nom.toLowerCase()));
+        S.plats = [...S.plats, ...nouveaux];
+        alert(`${nouveaux.length} nouveau(x) plat(s) ajouté(s).`);
+      }
+      S.nextId = Math.max(...S.plats.map(p=>p.id||0)) + 1;
+      savePlats();
+      renderPlats();
+    } catch(err) {
+      alert("Erreur lors de l'import : " + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+async function callClaude(prompt, maxTokens=800) {
+  const key = getKey();
+  if (!key) { alert("Saisissez votre clé API Anthropic en haut à droite."); throw new Error("Clé API manquante"); }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({}));
+    const msg = err.error?.message || `Erreur HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+  const data = await res.json();
+  return data.content[0].text.trim();
+}
+
+/* ---- TABS ---- */
+function goTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  if (name==='plats') renderPlats();
+  if (name==='menu') renderMenu();
+  if (name==='courses') renderCourses();
+}
+
+/* ---- CHIPS ---- */
+function chip1(el, key, val) {
+  el.closest('.chips').querySelectorAll('.chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  S.criteres[key] = val;
+}
+function chipN(el, key, val) {
+  if (!Array.isArray(S.criteres[key])) S.criteres[key] = [];
+  el.classList.toggle('on');
+  if (el.classList.contains('on')) { if (!S.criteres[key].includes(val)) S.criteres[key].push(val); }
+  else S.criteres[key] = S.criteres[key].filter(v=>v!==val);
+}
+function noneChip(el, key) {
+  el.closest('.chips').querySelectorAll('.chip').forEach(c => { if(c!==el) c.classList.remove('on'); });
+  el.classList.add('on');
+  S.criteres[key] = [];
+}
+
+/* ---- PLATS ---- */
+function catEmoji(cat) {
+  return {'Pâtes & riz':'🍝','Viande':'🥩','Poisson':'🐟','Végétarien':'🥦','Pizza & galettes':'🍕','Œufs':'🥚','Salade':'🥗','Soupe':'🍲','Autre':'🍽'}[cat]||'🍽';
+}
+
+function renderPlats() {
+  const wrap = document.getElementById('platsWrap');
+  if (!wrap) return;
+  const cats = [...new Set(S.plats.map(p=>p.cat))].sort();
+  wrap.innerHTML = cats.map(cat => {
+    const pp = S.plats.filter(p=>p.cat===cat);
+    return `<div class="cat-section">
+      <div class="cat-label">${catEmoji(cat)} ${cat} &mdash; ${pp.length} plat${pp.length>1?'s':''}</div>
+      <div class="plats-grid">${pp.map(p=>`
+        <div class="plat-item">
+          <div>
+            <div class="plat-name">${escHtml(p.nom)}</div>
+            ${p.time?`<div class="plat-time">&#x23F1; ${p.time} min</div>`:''}
+          </div>
+          <button class="btn-del" onclick="delPlat(${p.id})" title="Supprimer">&times;</button>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleAddForm() { document.getElementById('addForm').classList.toggle('open'); }
+
+function addPlat() {
+  const nom = document.getElementById('nNom').value.trim();
+  if (!nom) { alert("Saisissez un nom pour le plat."); return; }
+  S.plats.push({
+    id: S.nextId++, nom,
+    cat: document.getElementById('nCat').value,
+    time: parseInt(document.getElementById('nTime').value)||0,
+    ings: document.getElementById('nIngs').value.split(',').map(s=>s.trim()).filter(Boolean)
+  });
+  document.getElementById('nNom').value=''; document.getElementById('nTime').value=''; document.getElementById('nIngs').value='';
+  document.getElementById('addForm').classList.remove('open');
+  savePlats();
+  renderPlats();
+}
+
+function delPlat(id) {
+  if (!confirm("Supprimer ce plat ?")) return;
+  S.plats = S.plats.filter(p=>p.id!==id);
+  savePlats();
+  renderPlats();
+}
+
+async function suggestPlat() {
+  const box=document.getElementById('aiSugBox'), txt=document.getElementById('aiSugTxt'), acts=document.getElementById('aiSugActions');
+  box.style.display='block'; txt.className='ai-text thinking'; txt.textContent="Recherche d'idées..."; acts.innerHTML='';
+  const liste = S.plats.map(p=>p.nom).join(', ');
+  const prompt = `Famille avec enfants. Plats appréciés : ${liste}.
+Propose 3 nouveaux plats simples et bons pour cette famille.
+Format STRICT (une ligne par plat, rien d'autre) :
+Nom|Catégorie (parmi: Pâtes & riz, Viande, Poisson, Végétarien, Pizza & galettes, Œufs, Salade, Soupe, Autre)|Temps en minutes|ingrédient1,ingrédient2,ingrédient3`;
+  try {
+    const rep = await callClaude(prompt, 400);
+    const lines = rep.split('\n').filter(l=>l.includes('|'));
+    txt.className='ai-text';
+    txt.textContent = lines.map(l=>{ const [n,,t]=l.split('|').map(s=>s.trim()); return `• ${n} (${t} min)`; }).join('\n');
+    acts.innerHTML = lines.map(l => {
+      const parts = l.split('|').map(s=>s.trim());
+      const [nom,cat,time,ings] = parts;
+      const obj = JSON.stringify({nom,cat,time:parseInt(time)||30,ings:(ings||'').split(',').map(s=>s.trim()).filter(Boolean)});
+      return `<button class="btn btn-sm" onclick='addFromSug(${obj.replace(/'/g,"\\'")})'>&plus; ${escHtml(nom)}</button>`;
+    }).join('');
+  } catch(e) { txt.className='ai-text'; txt.textContent='Erreur : '+e.message; }
+}
+
+function addFromSug(p) {
+  if (typeof p === 'string') p = JSON.parse(p);
+  S.plats.push({id:S.nextId++,...p});
+  document.getElementById('aiSugBox').style.display='none';
+  savePlats();
+  renderPlats();
+}
+
+/* ---- GENERER MENU ---- */
+async function genMenu() {
+  const btn=document.getElementById('btnGen'), box=document.getElementById('genBox'), txt=document.getElementById('genTxt');
+  btn.disabled=true; box.style.display='block'; txt.className='ai-text thinking'; txt.textContent='Génération du menu en cours...';
+  S.nbPers = parseInt(document.getElementById('cPers').value)||5;
+  const jours = Math.min(parseInt(document.getElementById('cJours').value)||7, 7);
+  const consigne = document.getElementById('cConsigne').value.trim();
+  const joursNoms = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'].slice(0,jours);
+  const liste = S.plats.map(p=>`${p.nom} (${p.cat})`).join(', ');
+  const dessertListe = S.desserts.join(', ');
+  const priorites = (S.criteres.priorites||[]).filter(Boolean);
+  const dessertInstr = S.criteres.dessert==='non' ? 'Pas de dessert.' : `Choisir un dessert parmi cette liste : ${dessertListe}.`;
+
+  const prompt = `Tu planifies les dîners pour ${S.nbPers} personnes (famille avec enfants).
+Plats disponibles : ${liste}.
+Priorités : ${priorites.join(', ') || 'aucune particulière'}.
+Desserts : ${dessertInstr}
+${consigne ? 'Consigne supplémentaire : '+consigne:''}
+Jours : ${joursNoms.join(', ')}.
+Utilise en priorité les plats disponibles. Tu peux proposer 1 ou 2 plats supplémentaires simples si nécessaire.
+Pour chaque jour, estime aussi le coût approximatif du repas (dîner + dessert) pour ${S.nbPers} personnes en euros (ex: "8€", "12€"). Sois réaliste avec les prix français actuels.
+IMPORTANT : Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans backticks, sans texte avant ou après :
+{"jours":[{"jour":"Lundi","plat":"Nom exact du plat","dessert":"Nom du dessert ou chaîne vide","budget":"10€"}]}`;
+  try {
+    let rep = await callClaude(prompt, 700);
+    rep = rep.replace(/```json|```/g,'').trim();
+    const idx1 = rep.indexOf('{'), idx2 = rep.lastIndexOf('}');
+    if (idx1 !== -1 && idx2 !== -1) rep = rep.slice(idx1, idx2+1);
+    const parsed = JSON.parse(rep);
+    S.menu = parsed.jours;
+    txt.className='ai-text'; txt.textContent='✅ Menu généré ! Ouverture...';
+    btn.disabled=false;
+    setTimeout(()=>goTab('menu',document.querySelectorAll('.tab')[2]), 900);
+  } catch(e) {
+    txt.className='ai-text'; txt.textContent='❌ Erreur : '+e.message;
+    btn.disabled=false;
+  }
+}
+
+/* ---- AFFICHER MENU ---- */
+function buildPlatOptions(selected) {
+  const opts = S.plats.map(p => `<option value="${escHtml(p.nom)}" ${p.nom===selected?'selected':''}>${escHtml(p.nom)}</option>`).join('');
+  return `<option value="${escHtml(selected)}" selected>${escHtml(selected)}</option>` +
+    S.plats.filter(p=>p.nom!==selected).map(p=>`<option value="${escHtml(p.nom)}">${escHtml(p.nom)}</option>`).join('');
+}
+
+function buildDessertOptions(selected) {
+  const all = [...new Set([...S.desserts, ...(selected && !S.desserts.includes(selected) ? [selected] : [])])];
+  return `<option value="">— Pas de dessert —</option>` +
+    all.map(d=>`<option value="${escHtml(d)}" ${d===selected?'selected':''}>${escHtml(d)}</option>`).join('');
+}
+
+function renderMenu() {
+  const empty=document.getElementById('menuEmpty'), content=document.getElementById('menuContent');
+  if (!S.menu.length) { empty.style.display='block'; content.style.display='none'; return; }
+  empty.style.display='none'; content.style.display='block';
+
+  const totalBudget = S.menu.reduce((sum,j) => {
+    const m = (j.budget||'').match(/(\d+)/);
+    return sum + (m ? parseInt(m[1]) : 0);
+  }, 0);
+  const budgetHtml = totalBudget > 0
+    ? `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">Budget estimé semaine : <strong style="color:var(--green)">${totalBudget}€</strong> pour ${S.nbPers} personnes</div>`
+    : '';
+  document.getElementById('menuBudget').innerHTML = budgetHtml;
+
+  document.getElementById('menuGrid').innerHTML = S.menu.map((j,idx)=>`
+    <div class="day-card">
+      <div class="day-head">
+        <span>${escHtml(j.jour)}</span>
+      </div>
+      <div class="day-body">
+        <div class="r-label">🍽 Dîner</div>
+        <select class="day-edit" onchange="updateMenuPlat(${idx},'plat',this.value)">
+          ${buildPlatOptions(j.plat)}
+        </select>
+        <hr class="day-sep">
+        <div class="r-label">🍮 Dessert</div>
+        <select class="day-edit" onchange="updateMenuPlat(${idx},'dessert',this.value)">
+          ${buildDessertOptions(j.dessert)}
+        </select>
+      </div>
+    </div>`).join('');
+}
+
+function updateMenuPlat(idx, field, val) {
+  S.menu[idx][field] = val;
+  const totalBudget = S.menu.reduce((sum,j) => {
+    const m = (j.budget||'').match(/(\d+)/);
+    return sum + (m ? parseInt(m[1]) : 0);
+  }, 0);
+  if (totalBudget > 0) {
+    document.getElementById('menuBudget').innerHTML =
+      `<div style="font-size:13px;color:var(--text-muted);margin-top:4px">Budget estimé semaine : <strong style="color:var(--green)">${totalBudget}€</strong> pour ${S.nbPers} personnes</div>`;
+  }
+}
+
+/* ---- GENERER COURSES ---- */
+async function genCourses() {
+  goTab('courses', document.querySelectorAll('.tab')[3]);
+  const empty=document.getElementById('coursesEmpty'), content=document.getElementById('coursesContent');
+  const aiBox=document.getElementById('coursesAiBox'), aiTxt=document.getElementById('coursesAiTxt');
+  empty.style.display='none'; content.style.display='block';
+  aiBox.style.display='block'; aiTxt.className='ai-text thinking'; aiTxt.textContent='Calcul des ingrédients et quantités...';
+  document.getElementById('coursesList').innerHTML='';
+
+  const menuStr = S.menu.map(j=>`${j.jour}: ${j.plat}${j.dessert?' + '+j.dessert:''}`).join('\n');
+  const platsStr = S.plats.map(p=>`${p.nom}: ${p.ings.join(', ')}`).join('\n');
+
+  const prompt = `Liste de courses complète pour ${S.nbPers} personnes. Menu de la semaine :
+${menuStr}
+
+Ingrédients connus par plat :
+${platsStr}
+
+Génère la liste de courses avec quantités adaptées à ${S.nbPers} personnes. Consolide les doublons.
+Pour chaque article, estime aussi le prix approximatif en euros (prix supermarché français actuel, ex: "2.50").
+IMPORTANT : Réponds UNIQUEMENT avec du JSON valide, sans markdown, sans backticks :
+{"categories":[
+  {"nom":"🥩 Viandes & poissons","items":[{"nom":"Poulet","qte":"700g","prix":"6.50"}]},
+  {"nom":"🥦 Légumes & fruits","items":[]},
+  {"nom":"🥚 Produits frais","items":[]},
+  {"nom":"🍝 Épicerie sèche","items":[]},
+  {"nom":"🧊 Surgelés","items":[]},
+  {"nom":"🍮 Desserts","items":[]}
+]}`;
+  try {
+    let rep = await callClaude(prompt, 1200);
+    rep = rep.replace(/```json|```/g,'').trim();
+    const idx1=rep.indexOf('{'), idx2=rep.lastIndexOf('}');
+    if (idx1!==-1 && idx2!==-1) rep=rep.slice(idx1,idx2+1);
+    S.courses = JSON.parse(rep).categories;
+    aiBox.style.display='none';
+    renderCoursesList();
+  } catch(e) {
+    aiTxt.className='ai-text'; aiTxt.textContent='❌ Erreur : '+e.message;
+  }
+}
+
+function renderCourses() {
+  const empty=document.getElementById('coursesEmpty'), content=document.getElementById('coursesContent');
+  if (!S.courses.length) { empty.style.display='block'; content.style.display='none'; return; }
+  empty.style.display='none'; content.style.display='block';
+  renderCoursesList();
+}
+
+function renderCoursesList() {
+  let totalPrix = 0;
+  S.courses.forEach(cat => cat.items.forEach(item => {
+    totalPrix += parseFloat(item.prix||0);
+  }));
+  const totalHtml = totalPrix > 0
+    ? `<div style="text-align:right;font-size:13px;color:var(--text-muted);margin-bottom:1rem">
+        Total estimé : <strong style="color:var(--green);font-size:15px">${totalPrix.toFixed(2)}€</strong>
+       </div>`
+    : '';
+
+  document.getElementById('coursesList').innerHTML = totalHtml + S.courses.map((cat,ci) =>
+    `<div class="courses-cat">
+      <div class="courses-cat-title">${escHtml(cat.nom)}</div>
+      ${cat.items.map((item,ii)=>`
+        <div class="course-row" onclick="toggleCb(${ci},${ii})">
+          <div class="cb" id="cb${ci}_${ii}"></div>
+          <div class="c-name" id="cn${ci}_${ii}">${escHtml(item.nom)}</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+            <div class="c-qty">${escHtml(item.qte)}</div>
+            ${item.prix ? `<div style="font-size:12px;color:var(--green);font-weight:500;min-width:42px;text-align:right">~${parseFloat(item.prix).toFixed(2)}€</div>` : ''}
+          </div>
+        </div>`).join('')}
+    </div>`
+  ).join('');
+  updateProg();
+}
+
+function toggleCb(ci,ii) {
+  document.getElementById('cb'+ci+'_'+ii).classList.toggle('on');
+  document.getElementById('cn'+ci+'_'+ii).classList.toggle('done');
+  updateProg();
+}
+function updateProg() {
+  const all=document.querySelectorAll('.course-row').length, done=document.querySelectorAll('.cb.on').length;
+  document.getElementById('progFill').style.width=(all?Math.round(done/all*100):0)+'%';
+  document.getElementById('progLabel').textContent=done+' / '+all+' cochés';
+}
+function resetCb() {
+  document.querySelectorAll('.cb.on').forEach(el=>{ el.classList.remove('on'); el.nextElementSibling.classList.remove('done'); });
+  updateProg();
+}
+/* ---- GOOGLE SHEETS ---- */
+const GOOGLE_CLIENT_ID = '823026466162-n1h81n03alju1ho5p4oe3432peqlsrdn.apps.googleusercontent.com';
+const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+let googleToken = null;
+
+function sheetsStatus(msg, type='info') {
+  const el = document.getElementById('sheetsStatus');
+  el.style.display = 'block';
+  el.style.background = type==='ok' ? '#D6EAD9' : type==='err' ? '#F0D5CD' : '#F5EDCC';
+  el.style.color = type==='ok' ? '#2A5C38' : type==='err' ? '#8A2515' : '#7A5C10';
+  el.innerHTML = msg;
+}
+
+function getGoogleToken() {
+  return new Promise((resolve, reject) => {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: SHEETS_SCOPE,
+      callback: (resp) => {
+        if (resp.error) { reject(resp.error); return; }
+        googleToken = resp.access_token;
+        resolve(resp.access_token);
+      }
+    });
+    client.requestAccessToken();
+  });
+}
+
+async function exportSheets() {
+  if (!S.courses.length) { alert("Générez d'abord la liste de courses."); return; }
+  const btn = document.getElementById('btnSheets');
+  btn.disabled = true;
+  sheetsStatus('⏳ Connexion à Google...');
+  try {
+    const token = await getGoogleToken();
+    sheetsStatus('⏳ Création du Google Sheet...');
+
+    const semaine = S.menu.length ? S.menu.map(j=>j.jour).join(', ') : 'Semaine';
+    const title = `Liste de courses — ${new Date().toLocaleDateString('fr-FR')}`;
+
+    // Créer le spreadsheet
+    const createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ properties: { title } })
+    });
+    const sheet = await createRes.json();
+    const sheetId = sheet.spreadsheetId;
+
+    // Préparer les données
+    const rows = [];
+    rows.push([`🛒 Liste de courses — ${S.nbPers} personnes`, '', '', '']);
+    rows.push(['Menu : ' + (S.menu.map(j=>j.plat).join(', ')||''), '', '', '']);
+    rows.push(['', '', '', '']);
+    rows.push(['Article', 'Quantité', 'Prix estimé', 'Acheté ?']);
+
+    S.courses.forEach(cat => {
+      rows.push([cat.nom, '', '', '']);
+      cat.items.forEach(item => {
+        rows.push([
+          item.nom,
+          item.qte,
+          item.prix ? `${parseFloat(item.prix).toFixed(2)}€` : '',
+          'NON'
+        ]);
+      });
+      rows.push(['', '', '', '']);
+    });
+
+    // Calculer total
+    let total = 0;
+    S.courses.forEach(cat => cat.items.forEach(i => { total += parseFloat(i.prix||0); }));
+    if (total > 0) rows.push(['TOTAL ESTIMÉ', '', `${total.toFixed(2)}€`, '']);
+
+    // Écrire les données
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A1?valueInputOption=RAW`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ values: rows })
+    });
+
+    // Mise en forme : titre en gras, entêtes colorés
+    const requests = [
+      // Titre en gras grand
+      { repeatCell: { range: { sheetId:0, startRowIndex:0, endRowIndex:1 }, cell: { userEnteredFormat: { textFormat: { bold:true, fontSize:13 } } }, fields: 'userEnteredFormat.textFormat' } },
+      // Entêtes colonnes
+      { repeatCell: { range: { sheetId:0, startRowIndex:3, endRowIndex:4 }, cell: { userEnteredFormat: { backgroundColor: { red:0.24, green:0.49, blue:0.35 }, textFormat: { bold:true, foregroundColor:{ red:1,green:1,blue:1 } } } }, fields: 'userEnteredFormat' } },
+      // Largeur colonnes
+      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:0, endIndex:1 }, properties: { pixelSize:280 }, fields:'pixelSize' } },
+      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:1, endIndex:2 }, properties: { pixelSize:100 }, fields:'pixelSize' } },
+      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:2, endIndex:3 }, properties: { pixelSize:110 }, fields:'pixelSize' } },
+      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:3, endIndex:4 }, properties: { pixelSize:100 }, fields:'pixelSize' } },
+    ];
+
+    // Mettre les noms de catégories en gras+fond clair
+    let rowIdx = 4;
+    S.courses.forEach(cat => {
+      requests.push({ repeatCell: { range: { sheetId:0, startRowIndex:rowIdx, endRowIndex:rowIdx+1 }, cell: { userEnteredFormat: { backgroundColor:{ red:0.96,green:0.96,blue:0.93 }, textFormat:{ bold:true } } }, fields:'userEnteredFormat' } });
+      rowIdx += cat.items.length + 2;
+    });
+
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requests })
+    });
+
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}`;
+    sheetsStatus(`✅ Google Sheet créé ! <a href="${url}" target="_blank" style="color:var(--green);font-weight:500">Ouvrir le Sheet →</a><br><span style="font-size:12px;color:var(--text-muted)">Partagez-le avec votre famille via le bouton "Partager" dans Google Sheets.</span>`, 'ok');
+    btn.disabled = false;
+  } catch(e) {
+    sheetsStatus('❌ Erreur : ' + e.message, 'err');
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
