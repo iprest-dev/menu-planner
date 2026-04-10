@@ -123,7 +123,6 @@
     .api-zone input { width: 180px; }
   }
 </style>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -250,10 +249,10 @@
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span style="font-size:12px;color:var(--text-muted)" id="progLabel">0 / 0 cochés</span>
             <button class="btn btn-sm" onclick="resetCb()">↺ Tout décocher</button>
-            <button class="btn btn-green btn-sm" id="btnSheets" onclick="exportSheets()">📊 Exporter Google Sheets</button>
+            <button class="btn btn-green btn-sm" id="btnTodoist" onclick="exportTodoist()">✅ Exporter vers Todoist</button>
           </div>
         </div>
-        <div id="sheetsStatus" style="display:none;font-size:13px;padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:10px"></div>
+        <div id="todoistStatus" style="display:none;font-size:13px;padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:10px"></div>
         <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
         <div id="coursesAiBox" class="ai-box" style="display:none">
           <div class="ai-label">✨ Claude calcule...</div>
@@ -706,118 +705,104 @@ function resetCb() {
   document.querySelectorAll('.cb.on').forEach(el=>{ el.classList.remove('on'); el.nextElementSibling.classList.remove('done'); });
   updateProg();
 }
-/* ---- GOOGLE SHEETS ---- */
-const GOOGLE_CLIENT_ID = '823026466162-n1h81n03alju1ho5p4oe3432peqlsrdn.apps.googleusercontent.com';
-const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-let googleToken = null;
+/* ---- TODOIST ---- */
+const TODOIST_TOKEN = '8ae44d299fe05b3f1f58d84b43968b0d1d5edf11';
+const TODOIST_API = 'https://api.todoist.com/rest/v2';
 
-function sheetsStatus(msg, type='info') {
-  const el = document.getElementById('sheetsStatus');
+function todoistStatus(msg, type='info') {
+  const el = document.getElementById('todoistStatus');
   el.style.display = 'block';
   el.style.background = type==='ok' ? '#D6EAD9' : type==='err' ? '#F0D5CD' : '#F5EDCC';
   el.style.color = type==='ok' ? '#2A5C38' : type==='err' ? '#8A2515' : '#7A5C10';
   el.innerHTML = msg;
 }
 
-function getGoogleToken() {
-  return new Promise((resolve, reject) => {
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: SHEETS_SCOPE,
-      callback: (resp) => {
-        if (resp.error) { reject(resp.error); return; }
-        googleToken = resp.access_token;
-        resolve(resp.access_token);
-      }
-    });
-    client.requestAccessToken();
-  });
+async function todoistFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${TODOIST_TOKEN}`,
+      'Content-Type': 'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(TODOIST_API + path, opts);
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Todoist erreur ${res.status} : ${err}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
 }
 
-async function exportSheets() {
+async function exportTodoist() {
   if (!S.courses.length) { alert("Générez d'abord la liste de courses."); return; }
-  const btn = document.getElementById('btnSheets');
+  const btn = document.getElementById('btnTodoist');
   btn.disabled = true;
-  sheetsStatus('⏳ Connexion à Google...');
+  todoistStatus('⏳ Connexion à Todoist...');
+
   try {
-    const token = await getGoogleToken();
-    sheetsStatus('⏳ Création du Google Sheet...');
+    // Trouver ou créer le projet "Courses"
+    todoistStatus('⏳ Recherche du projet Courses...');
+    const projects = await todoistFetch('/projects');
+    let project = projects.find(p => p.name.toLowerCase() === 'courses');
+    if (!project) {
+      todoistStatus('⏳ Création du projet Courses...');
+      project = await todoistFetch('/projects', 'POST', { name: 'Courses', color: 'green' });
+    }
+    const projectId = project.id;
 
-    const semaine = S.menu.length ? S.menu.map(j=>j.jour).join(', ') : 'Semaine';
-    const title = `Liste de courses — ${new Date().toLocaleDateString('fr-FR')}`;
+    // Supprimer les tâches existantes du projet pour repartir propre
+    todoistStatus('⏳ Nettoyage de la liste précédente...');
+    const existingTasks = await todoistFetch(`/tasks?project_id=${projectId}`);
+    await Promise.all(existingTasks.map(t => todoistFetch(`/tasks/${t.id}`, 'DELETE')));
 
-    // Créer le spreadsheet
-    const createRes = await fetch('https://sheets.googleapis.com/v4/spreadsheets', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ properties: { title } })
-    });
-    const sheet = await createRes.json();
-    const sheetId = sheet.spreadsheetId;
+    // Créer les sections par catégorie et les tâches
+    todoistStatus('⏳ Ajout des articles...');
 
-    // Préparer les données
-    const rows = [];
-    rows.push([`🛒 Liste de courses — ${S.nbPers} personnes`, '', '', '']);
-    rows.push(['Menu : ' + (S.menu.map(j=>j.plat).join(', ')||''), '', '', '']);
-    rows.push(['', '', '', '']);
-    rows.push(['Article', 'Quantité', 'Prix estimé', 'Acheté ?']);
+    // Supprimer les sections existantes
+    const existingSections = await todoistFetch(`/sections?project_id=${projectId}`);
+    await Promise.all(existingSections.map(s => todoistFetch(`/sections/${s.id}`, 'DELETE')));
 
-    S.courses.forEach(cat => {
-      rows.push([cat.nom, '', '', '']);
-      cat.items.forEach(item => {
-        rows.push([
-          item.nom,
-          item.qte,
-          item.prix ? `${parseFloat(item.prix).toFixed(2)}€` : '',
-          'NON'
-        ]);
+    let totalPrix = 0;
+    S.courses.forEach(cat => cat.items.forEach(i => { totalPrix += parseFloat(i.prix||0); }));
+
+    for (const cat of S.courses) {
+      if (!cat.items.length) continue;
+
+      // Créer une section pour la catégorie
+      const section = await todoistFetch('/sections', 'POST', {
+        project_id: projectId,
+        name: cat.nom
       });
-      rows.push(['', '', '', '']);
-    });
 
-    // Calculer total
-    let total = 0;
-    S.courses.forEach(cat => cat.items.forEach(i => { total += parseFloat(i.prix||0); }));
-    if (total > 0) rows.push(['TOTAL ESTIMÉ', '', `${total.toFixed(2)}€`, '']);
+      // Créer les tâches dans cette section
+      for (const item of cat.items) {
+        const label = item.prix
+          ? `${item.nom} — ${item.qte} (~${parseFloat(item.prix).toFixed(2)}€)`
+          : `${item.nom} — ${item.qte}`;
+        await todoistFetch('/tasks', 'POST', {
+          project_id: projectId,
+          section_id: section.id,
+          content: label
+        });
+      }
+    }
 
-    // Écrire les données
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A1?valueInputOption=RAW`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ values: rows })
-    });
+    // Tâche récapitulative budget
+    if (totalPrix > 0) {
+      await todoistFetch('/tasks', 'POST', {
+        project_id: projectId,
+        content: `💰 Budget estimé total : ${totalPrix.toFixed(2)}€`
+      });
+    }
 
-    // Mise en forme : titre en gras, entêtes colorés
-    const requests = [
-      // Titre en gras grand
-      { repeatCell: { range: { sheetId:0, startRowIndex:0, endRowIndex:1 }, cell: { userEnteredFormat: { textFormat: { bold:true, fontSize:13 } } }, fields: 'userEnteredFormat.textFormat' } },
-      // Entêtes colonnes
-      { repeatCell: { range: { sheetId:0, startRowIndex:3, endRowIndex:4 }, cell: { userEnteredFormat: { backgroundColor: { red:0.24, green:0.49, blue:0.35 }, textFormat: { bold:true, foregroundColor:{ red:1,green:1,blue:1 } } } }, fields: 'userEnteredFormat' } },
-      // Largeur colonnes
-      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:0, endIndex:1 }, properties: { pixelSize:280 }, fields:'pixelSize' } },
-      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:1, endIndex:2 }, properties: { pixelSize:100 }, fields:'pixelSize' } },
-      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:2, endIndex:3 }, properties: { pixelSize:110 }, fields:'pixelSize' } },
-      { updateDimensionProperties: { range: { sheetId:0, dimension:'COLUMNS', startIndex:3, endIndex:4 }, properties: { pixelSize:100 }, fields:'pixelSize' } },
-    ];
-
-    // Mettre les noms de catégories en gras+fond clair
-    let rowIdx = 4;
-    S.courses.forEach(cat => {
-      requests.push({ repeatCell: { range: { sheetId:0, startRowIndex:rowIdx, endRowIndex:rowIdx+1 }, cell: { userEnteredFormat: { backgroundColor:{ red:0.96,green:0.96,blue:0.93 }, textFormat:{ bold:true } } }, fields:'userEnteredFormat' } });
-      rowIdx += cat.items.length + 2;
-    });
-
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}:batchUpdate`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ requests })
-    });
-
-    const url = `https://docs.google.com/spreadsheets/d/${sheetId}`;
-    sheetsStatus(`✅ Google Sheet créé ! <a href="${url}" target="_blank" style="color:var(--green);font-weight:500">Ouvrir le Sheet →</a><br><span style="font-size:12px;color:var(--text-muted)">Partagez-le avec votre famille via le bouton "Partager" dans Google Sheets.</span>`, 'ok');
+    const projectUrl = `https://todoist.com/app/project/${projectId}`;
+    todoistStatus(`✅ Liste envoyée dans Todoist ! <a href="${projectUrl}" target="_blank" style="color:var(--green);font-weight:500">Ouvrir dans Todoist →</a><br><span style="font-size:12px;color:var(--text-muted)">Partagez le projet "Courses" avec votre famille depuis l'appli Todoist.</span>`, 'ok');
     btn.disabled = false;
+
   } catch(e) {
-    sheetsStatus('❌ Erreur : ' + e.message, 'err');
+    todoistStatus('❌ Erreur : ' + e.message, 'err');
     btn.disabled = false;
   }
 }
