@@ -707,7 +707,7 @@ function resetCb() {
 }
 /* ---- TODOIST ---- */
 const TODOIST_TOKEN = '8ae44d299fe05b3f1f58d84b43968b0d1d5edf11';
-const TODOIST_API = 'https://corsproxy.io/?https://api.todoist.com/rest/v2';
+const TODOIST_API_BASE = 'https://api.todoist.com/rest/v2';
 
 function todoistStatus(msg, type='info') {
   const el = document.getElementById('todoistStatus');
@@ -722,13 +722,14 @@ async function todoistFetch(path, method='GET', body=null) {
     method,
     headers: {
       'Authorization': `Bearer ${TODOIST_TOKEN}`,
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
+    mode: 'cors'
   };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(TODOIST_API + path, opts);
+  const res = await fetch(TODOIST_API_BASE + path, opts);
   if (!res.ok) {
-    const err = await res.text();
+    const err = await res.text().catch(()=>'');
     throw new Error(`Todoist erreur ${res.status} : ${err}`);
   }
   if (res.status === 204) return null;
@@ -802,7 +803,11 @@ async function exportTodoist() {
     btn.disabled = false;
 
   } catch(e) {
-    todoistStatus('❌ Erreur : ' + e.message, 'err');
+    let msg = e.message;
+    if (e.message === 'Failed to fetch') {
+      msg = 'Impossible de joindre Todoist. Vérifiez votre connexion internet, ou que votre navigateur ne bloque pas les requêtes (désactivez les extensions type AdBlock le temps du test).';
+    }
+    todoistStatus('❌ Erreur : ' + msg, 'err');
     btn.disabled = false;
   }
 }
