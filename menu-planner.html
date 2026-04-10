@@ -153,8 +153,10 @@
         <button class="btn btn-gold btn-sm" onclick="suggestPlat()">✨ Suggestion IA</button>
         <button class="btn btn-sm" onclick="exportPlats()" title="Télécharger la liste de plats">⬇ Exporter</button>
         <button class="btn btn-sm" onclick="document.getElementById('importFile').click()" title="Importer une liste de plats">⬆ Importer</button>
+        <button class="btn btn-green btn-sm" onclick="saveToGithub()" title="Sauvegarder les plats dans GitHub">💾 Sauvegarder sur GitHub</button>
         <input type="file" id="importFile" accept=".json" style="display:none" onchange="importPlats(event)">
       </div>
+      <div id="githubStatus" style="display:none;font-size:13px;padding:8px 12px;border-radius:var(--radius-sm);margin-bottom:10px"></div>
       <div class="add-form" id="addForm">
         <div class="row3">
           <div><label>Nom du plat</label><input type="text" id="nNom" placeholder="Ex: Tarte flambée"></div>
@@ -705,7 +707,72 @@ function resetCb() {
   document.querySelectorAll('.cb.on').forEach(el=>{ el.classList.remove('on'); el.nextElementSibling.classList.remove('done'); });
   updateProg();
 }
-/* ---- TODOIST ---- */
+/* ---- SAUVEGARDE GITHUB ---- */
+const GITHUB_TOKEN = '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';
+const GITHUB_REPO = 'iprest-dev/menu-planner';
+const GITHUB_FILE = 'menu-planner.html';
+const GITHUB_API  = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+
+function githubStatus(msg, type='info') {
+  const el = document.getElementById('githubStatus');
+  el.style.display = 'block';
+  el.style.background = type==='ok' ? '#D6EAD9' : type==='err' ? '#F0D5CD' : '#F5EDCC';
+  el.style.color = type==='ok' ? '#2A5C38' : type==='err' ? '#8A2515' : '#7A5C10';
+  el.innerHTML = msg;
+}
+
+async function saveToGithub() {
+  githubStatus('⏳ Récupération du fichier GitHub...');
+  try {
+    // 1. Récupérer le SHA et le contenu actuel du fichier
+    const infoRes = await fetch(GITHUB_API, {
+      headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+    });
+    if (!infoRes.ok) throw new Error(`GitHub erreur ${infoRes.status}`);
+    const info = await infoRes.json();
+    const sha = info.sha;
+
+    // 2. Décoder le contenu actuel (base64)
+    const currentContent = atob(info.content.replace(/\n/g,''));
+
+    // 3. Remplacer le bloc plats dans le contenu
+    const platsJson = JSON.stringify(S.plats, null, 4)
+      .split('\n').map((l,i) => i===0 ? l : '  '+l).join('\n');
+
+    const newPlatsBlock = `plats: ${platsJson},`;
+    const newContent = currentContent.replace(/plats:\s*\[[\s\S]*?\],\s*(?=desserts:)/, newPlatsBlock + '\n  ');
+
+    if (newContent === currentContent) {
+      githubStatus('⚠️ Aucune modification détectée dans la liste des plats.', 'info');
+      return;
+    }
+
+    // 4. Encoder en base64 et pousser
+    githubStatus('⏳ Mise à jour du fichier sur GitHub...');
+    const encoded = btoa(unescape(encodeURIComponent(newContent)));
+    const pushRes = await fetch(GITHUB_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `Mise à jour liste de plats — ${new Date().toLocaleDateString('fr-FR')}`,
+        content: encoded,
+        sha: sha
+      })
+    });
+    if (!pushRes.ok) {
+      const err = await pushRes.json().catch(()=>({}));
+      throw new Error(err.message || `GitHub erreur ${pushRes.status}`);
+    }
+    githubStatus('✅ Liste de plats sauvegardée sur GitHub ! Les changements seront visibles dans 1-2 minutes.', 'ok');
+  } catch(e) {
+    githubStatus('❌ Erreur : ' + e.message, 'err');
+  }
+}
+</script>
 const TODOIST_TOKEN = '8ae44d299fe05b3f1f58d84b43968b0d1d5edf11';
 const TODOIST_API_BASE = 'https://cool-cake-c303.iprest.workers.dev';
 
