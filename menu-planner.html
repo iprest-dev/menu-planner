@@ -708,7 +708,7 @@ function resetCb() {
   updateProg();
 }
 /* ---- SAUVEGARDE GITHUB ---- */
-const GITHUB_TOKEN = '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';
+const GITHUB_TOKEN = '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';
 const GITHUB_REPO = 'iprest-dev/menu-planner';
 const GITHUB_FILE = 'menu-planner.html';
 const GITHUB_API  = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
@@ -772,8 +772,8 @@ async function saveToGithub() {
     githubStatus('❌ Erreur : ' + e.message, 'err');
   }
 }
-</script>
-const TODOIST_TOKEN = '8ae44d299fe05b3f1f58d84b43968b0d1d5edf11';
+
+/* ---- TODOIST ---- */
 const TODOIST_API_BASE = 'https://cool-cake-c303.iprest.workers.dev';
 
 function todoistStatus(msg, type='info') {
