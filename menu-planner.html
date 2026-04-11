@@ -707,12 +707,26 @@ function resetCb() {
   document.querySelectorAll('.cb.on').forEach(el=>{ el.classList.remove('on'); el.nextElementSibling.classList.remove('done'); });
   updateProg();
 }
-/* ---- SAUVEGARDE GITHUB ---- */
-const GITHUB_TOKEN = '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';
+/* ---- WORKER PROXY ---- */
+const WORKER = 'https://cool-cake-c303.iprest.workers.dev';
 const GITHUB_REPO = 'iprest-dev/menu-planner';
 const GITHUB_FILE = 'menu-planner.html';
-const GITHUB_API  = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
 
+async function workerFetch(service, path, method='GET', body=null, extraHeaders={}) {
+  const headers = { 'X-Service': service, ...extraHeaders };
+  if (body) headers['Content-Type'] = 'application/json';
+  const opts = { method, headers, mode: 'cors' };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(WORKER + path, opts);
+  if (!res.ok) {
+    const err = await res.text().catch(()=>'');
+    throw new Error(`${service} erreur ${res.status} : ${err}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+/* ---- SAUVEGARDE GITHUB ---- */
 function githubStatus(msg, type='info') {
   const el = document.getElementById('githubStatus');
   el.style.display = 'block';
@@ -724,60 +738,39 @@ function githubStatus(msg, type='info') {
 async function saveToGithub() {
   githubStatus('⏳ Récupération du fichier GitHub...');
   try {
-    // 1. Récupérer le SHA et le contenu actuel du fichier
-    const infoRes = await fetch(GITHUB_API, {
-      headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-    });
-    if (!infoRes.ok) throw new Error(`GitHub erreur ${infoRes.status}`);
-    const info = await infoRes.json();
+    // 1. Récupérer SHA et contenu actuel
+    const info = await workerFetch('github', `/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`, 'GET', null, {'Accept':'application/vnd.github.v3+json'});
     const sha = info.sha;
 
-    // 2. Décoder le contenu actuel (base64)
-    const currentContent = atob(info.content.replace(/\n/g,''));
+    // 2. Décoder le contenu actuel
+    const currentContent = decodeURIComponent(escape(atob(info.content.replace(/\n/g,''))));
 
-    // 3. Remplacer le bloc plats dans le contenu
+    // 3. Remplacer le bloc plats
     const platsJson = JSON.stringify(S.plats, null, 4)
       .split('\n').map((l,i) => i===0 ? l : '  '+l).join('\n');
-
-    const newPlatsBlock = `plats: ${platsJson},`;
-    const newContent = currentContent.replace(/plats:\s*\[[\s\S]*?\],\s*(?=desserts:)/, newPlatsBlock + '\n  ');
+    const newContent = currentContent.replace(/plats:\s*\[[\s\S]*?\],\s*(?=desserts:)/, `plats: ${platsJson},\n  `);
 
     if (newContent === currentContent) {
-      githubStatus('⚠️ Aucune modification détectée dans la liste des plats.', 'info');
+      githubStatus('⚠️ Aucune modification détectée.', 'info');
       return;
     }
 
-    // 4. Encoder en base64 et pousser
+    // 4. Encoder et pousser
     githubStatus('⏳ Mise à jour du fichier sur GitHub...');
     const encoded = btoa(unescape(encodeURIComponent(newContent)));
-    const pushRes = await fetch(GITHUB_API, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `Mise à jour liste de plats — ${new Date().toLocaleDateString('fr-FR')}`,
-        content: encoded,
-        sha: sha
-      })
-    });
-    if (!pushRes.ok) {
-      const err = await pushRes.json().catch(()=>({}));
-      throw new Error(err.message || `GitHub erreur ${pushRes.status}`);
-    }
-    githubStatus('✅ Liste de plats sauvegardée sur GitHub ! Les changements seront visibles dans 1-2 minutes.', 'ok');
+    await workerFetch('github', `/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`, 'PUT', {
+      message: `Mise à jour liste de plats — ${new Date().toLocaleDateString('fr-FR')}`,
+      content: encoded,
+      sha
+    }, {'Accept':'application/vnd.github.v3+json'});
+
+    githubStatus('✅ Liste de plats sauvegardée sur GitHub ! Visible dans 1-2 minutes.', 'ok');
   } catch(e) {
     githubStatus('❌ Erreur : ' + e.message, 'err');
   }
 }
 
 /* ---- TODOIST ---- */
-const TODOIST_TOKEN = '8ae44d299fe05b3f1f58d84b43968b0d1d5edf11';
-const TODOIST_API_BASE = 'https://cool-cake-c303.iprest.workers.dev';
-const TODOIST_DIRECT = 'https://api.todoist.com/api/v1';
-
 function todoistStatus(msg, type='info') {
   const el = document.getElementById('todoistStatus');
   el.style.display = 'block';
@@ -787,18 +780,7 @@ function todoistStatus(msg, type='info') {
 }
 
 async function todoistFetch(path, method='GET', body=null) {
-  const headers = { 'Authorization': `Bearer ${TODOIST_TOKEN}` };
-  if (body) headers['Content-Type'] = 'application/json';
-  const base = method === 'GET' ? TODOIST_DIRECT : TODOIST_API_BASE;
-  const opts = { method, headers, mode: 'cors' };
-  if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(base + path, opts);
-  if (!res.ok) {
-    const err = await res.text().catch(()=>'');
-    throw new Error(`Todoist erreur ${res.status} : ${err}`);
-  }
-  if (res.status === 204) return null;
-  return res.json();
+  return workerFetch('todoist', path, method, body);
 }
 
 async function exportTodoist() {
