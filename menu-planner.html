@@ -270,24 +270,226 @@
 <script>
 const S = {
   plats: [
-    {id:1,nom:"Spaghettis bolognaise",cat:"Pâtes & riz",time:30,ings:["pâtes","bœuf haché","tomate","oignon","carotte"]},
-    {id:2,nom:"Pâtes carbonara",cat:"Pâtes & riz",time:20,ings:["pâtes","lardons","œufs","parmesan","crème"]},
-    {id:3,nom:"Pâtes pesto",cat:"Pâtes & riz",time:15,ings:["pâtes","pesto","parmesan"]},
-    {id:4,nom:"Gratin de pâtes",cat:"Pâtes & riz",time:40,ings:["pâtes","gruyère","béchamel","lardons"]},
-    {id:5,nom:"Gnocchis poêlés & légumes",cat:"Pâtes & riz",time:20,ings:["gnocchis","courgette","tomate","basilic"]},
-    {id:6,nom:"Galettes complètes",cat:"Pizza & galettes",time:20,ings:["galettes blé noir","œufs","jambon","gruyère"]},
-    {id:7,nom:"Galettes chèvre miel",cat:"Pizza & galettes",time:20,ings:["galettes blé noir","chèvre","miel","noix"]},
-    {id:8,nom:"Croque monsieur",cat:"Pizza & galettes",time:15,ings:["pain de mie","jambon","gruyère","béchamel"]},
-    {id:9,nom:"Pizza fraîche",cat:"Pizza & galettes",time:5,ings:["pizza du commerce"]},
-    {id:10,nom:"Fajitas de poulet",cat:"Viande",time:25,ings:["poulet","poivrons","oignon","tortillas","épices tex-mex"]},
-    {id:11,nom:"Poêlée de saumon & riz",cat:"Poisson",time:20,ings:["saumon","riz","citron","haricots verts"]},
-    {id:12,nom:"Sushis Auchan",cat:"Poisson",time:5,ings:["sushis du commerce"]},
-    {id:13,nom:"Omelette",cat:"Œufs",time:15,ings:["œufs","lardons","gruyère"]},
-    {id:14,nom:"Œufs à la coque",cat:"Œufs",time:10,ings:["œufs","pain","beurre"]},
-    {id:15,nom:"Poêlée de légumes",cat:"Végétarien",time:20,ings:["courgette","poivron","oignon","tomate","herbes de Provence"]},
-    {id:16,nom:"Pommes de terre sautées",cat:"Végétarien",time:25,ings:["pommes de terre","ail","persil","huile"]},
-    {id:17,nom:"Salade riz thon maïs",cat:"Salade",time:15,ings:["riz","thon","maïs","tomate","vinaigrette"]},
-    {id:18,nom:"Salade avocat crevettes pamplemousse",cat:"Salade",time:15,ings:["avocat","crevettes","pamplemousse","salade verte","vinaigrette"]},
+      {
+          "id": 1,
+          "nom": "Spaghettis bolognaise",
+          "cat": "Pâtes & riz",
+          "time": 30,
+          "ings": [
+              "pâtes",
+              "bœuf haché",
+              "tomate",
+              "oignon",
+              "carotte"
+          ]
+      },
+      {
+          "id": 2,
+          "nom": "Pâtes carbonara",
+          "cat": "Pâtes & riz",
+          "time": 20,
+          "ings": [
+              "pâtes",
+              "lardons",
+              "œufs",
+              "parmesan",
+              "crème"
+          ]
+      },
+      {
+          "id": 3,
+          "nom": "Pâtes pesto",
+          "cat": "Pâtes & riz",
+          "time": 15,
+          "ings": [
+              "pâtes",
+              "pesto",
+              "parmesan"
+          ]
+      },
+      {
+          "id": 4,
+          "nom": "Gratin de pâtes",
+          "cat": "Pâtes & riz",
+          "time": 40,
+          "ings": [
+              "pâtes",
+              "gruyère",
+              "béchamel",
+              "lardons"
+          ]
+      },
+      {
+          "id": 5,
+          "nom": "Gnocchis poêlés & légumes",
+          "cat": "Pâtes & riz",
+          "time": 20,
+          "ings": [
+              "gnocchis",
+              "courgette",
+              "tomate",
+              "basilic"
+          ]
+      },
+      {
+          "id": 6,
+          "nom": "Galettes complètes",
+          "cat": "Pizza & galettes",
+          "time": 20,
+          "ings": [
+              "galettes blé noir",
+              "œufs",
+              "jambon",
+              "gruyère"
+          ]
+      },
+      {
+          "id": 7,
+          "nom": "Galettes chèvre miel",
+          "cat": "Pizza & galettes",
+          "time": 20,
+          "ings": [
+              "galettes blé noir",
+              "chèvre",
+              "miel",
+              "noix"
+          ]
+      },
+      {
+          "id": 8,
+          "nom": "Croque monsieur",
+          "cat": "Pizza & galettes",
+          "time": 15,
+          "ings": [
+              "pain de mie",
+              "jambon",
+              "gruyère",
+              "béchamel"
+          ]
+      },
+      {
+          "id": 9,
+          "nom": "Pizza fraîche",
+          "cat": "Pizza & galettes",
+          "time": 5,
+          "ings": [
+              "pizza du commerce"
+          ]
+      },
+      {
+          "id": 10,
+          "nom": "Fajitas de poulet",
+          "cat": "Viande",
+          "time": 25,
+          "ings": [
+              "poulet",
+              "poivrons",
+              "oignon",
+              "tortillas",
+              "épices tex-mex"
+          ]
+      },
+      {
+          "id": 11,
+          "nom": "Poêlée de saumon & riz",
+          "cat": "Poisson",
+          "time": 20,
+          "ings": [
+              "saumon",
+              "riz",
+              "citron",
+              "haricots verts"
+          ]
+      },
+      {
+          "id": 12,
+          "nom": "Sushis Auchan",
+          "cat": "Poisson",
+          "time": 5,
+          "ings": [
+              "sushis du commerce"
+          ]
+      },
+      {
+          "id": 13,
+          "nom": "Omelette",
+          "cat": "Œufs",
+          "time": 15,
+          "ings": [
+              "œufs",
+              "lardons",
+              "gruyère"
+          ]
+      },
+      {
+          "id": 14,
+          "nom": "Œufs à la coque",
+          "cat": "Œufs",
+          "time": 10,
+          "ings": [
+              "œufs",
+              "pain",
+              "beurre"
+          ]
+      },
+      {
+          "id": 15,
+          "nom": "Poêlée de légumes",
+          "cat": "Végétarien",
+          "time": 20,
+          "ings": [
+              "courgette",
+              "poivron",
+              "oignon",
+              "tomate",
+              "herbes de Provence"
+          ]
+      },
+      {
+          "id": 16,
+          "nom": "Pommes de terre sautées",
+          "cat": "Végétarien",
+          "time": 25,
+          "ings": [
+              "pommes de terre",
+              "ail",
+              "persil",
+              "huile"
+          ]
+      },
+      {
+          "id": 17,
+          "nom": "Salade riz thon maïs",
+          "cat": "Salade",
+          "time": 15,
+          "ings": [
+              "riz",
+              "thon",
+              "maïs",
+              "tomate",
+              "vinaigrette"
+          ]
+      },
+      {
+          "id": 18,
+          "nom": "Salade avocat crevettes pamplemousse",
+          "cat": "Salade",
+          "time": 15,
+          "ings": [
+              "avocat",
+              "crevettes",
+              "pamplemousse",
+              "salade verte",
+              "vinaigrette"
+          ]
+      },
+      {
+          "id": 19,
+          "nom": "Roti de porc froid",
+          "cat": "Viande",
+          "time": 5,
+          "ings": []
+      }
   ],
   desserts: [
     "Yaourts nature","Yaourts aux fruits","Petits suisses","Compote de fruits","Tiramisu",
@@ -296,7 +498,7 @@ const S = {
   ],
   criteres: { dessert:'oui', contraintes:[], priorites:['rapide','équilibré'] },
   menu: [], courses: [], nbPers: 5, nextId: 19,
-  version: 1
+  version: 2
 };
 
 /* ---- CLE API ---- */
