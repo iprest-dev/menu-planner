@@ -840,7 +840,7 @@ async function exportTodoist() {
     }
 
     if (totalPrix > 0) {
-      await todoistFetch('/tasks/add', 'POST', {
+      await todoistFetch('/tasks', 'POST', {
         project_id: projectId,
         content: `💰 Budget estimé total : ${totalPrix.toFixed(2)}€`
       });
