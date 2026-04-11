@@ -128,10 +128,6 @@
 
 <header>
   <h1>Menu <span>Planner</span></h1>
-  <div class="api-zone">
-    <div class="api-dot" id="apiDot" title="Statut clé API"></div>
-    <input type="password" id="apiKey" placeholder="Clé API Anthropic  sk-ant-..." oninput="saveKey()" autocomplete="off">
-  </div>
 </header>
 
 <div class="tabs">
@@ -145,7 +141,6 @@
 
   <!-- PLATS -->
   <div class="section active" id="s-plats">
-    <div class="notice" id="noticeKey">⚠️ Saisissez votre clé API Anthropic dans le champ en haut à droite pour utiliser les fonctions IA. Obtenez-la sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>.</div>
     <div class="card">
       <div class="card-title">📚 Mes plats favoris</div>
       <div class="btns">
@@ -270,226 +265,24 @@
 <script>
 const S = {
   plats: [
-      {
-          "id": 1,
-          "nom": "Spaghettis bolognaise",
-          "cat": "Pâtes & riz",
-          "time": 30,
-          "ings": [
-              "pâtes",
-              "bœuf haché",
-              "tomate",
-              "oignon",
-              "carotte"
-          ]
-      },
-      {
-          "id": 2,
-          "nom": "Pâtes carbonara",
-          "cat": "Pâtes & riz",
-          "time": 20,
-          "ings": [
-              "pâtes",
-              "lardons",
-              "œufs",
-              "parmesan",
-              "crème"
-          ]
-      },
-      {
-          "id": 3,
-          "nom": "Pâtes pesto",
-          "cat": "Pâtes & riz",
-          "time": 15,
-          "ings": [
-              "pâtes",
-              "pesto",
-              "parmesan"
-          ]
-      },
-      {
-          "id": 4,
-          "nom": "Gratin de pâtes",
-          "cat": "Pâtes & riz",
-          "time": 40,
-          "ings": [
-              "pâtes",
-              "gruyère",
-              "béchamel",
-              "lardons"
-          ]
-      },
-      {
-          "id": 5,
-          "nom": "Gnocchis poêlés & légumes",
-          "cat": "Pâtes & riz",
-          "time": 20,
-          "ings": [
-              "gnocchis",
-              "courgette",
-              "tomate",
-              "basilic"
-          ]
-      },
-      {
-          "id": 6,
-          "nom": "Galettes complètes",
-          "cat": "Pizza & galettes",
-          "time": 20,
-          "ings": [
-              "galettes blé noir",
-              "œufs",
-              "jambon",
-              "gruyère"
-          ]
-      },
-      {
-          "id": 7,
-          "nom": "Galettes chèvre miel",
-          "cat": "Pizza & galettes",
-          "time": 20,
-          "ings": [
-              "galettes blé noir",
-              "chèvre",
-              "miel",
-              "noix"
-          ]
-      },
-      {
-          "id": 8,
-          "nom": "Croque monsieur",
-          "cat": "Pizza & galettes",
-          "time": 15,
-          "ings": [
-              "pain de mie",
-              "jambon",
-              "gruyère",
-              "béchamel"
-          ]
-      },
-      {
-          "id": 9,
-          "nom": "Pizza fraîche",
-          "cat": "Pizza & galettes",
-          "time": 5,
-          "ings": [
-              "pizza du commerce"
-          ]
-      },
-      {
-          "id": 10,
-          "nom": "Fajitas de poulet",
-          "cat": "Viande",
-          "time": 25,
-          "ings": [
-              "poulet",
-              "poivrons",
-              "oignon",
-              "tortillas",
-              "épices tex-mex"
-          ]
-      },
-      {
-          "id": 11,
-          "nom": "Poêlée de saumon & riz",
-          "cat": "Poisson",
-          "time": 20,
-          "ings": [
-              "saumon",
-              "riz",
-              "citron",
-              "haricots verts"
-          ]
-      },
-      {
-          "id": 12,
-          "nom": "Sushis Auchan",
-          "cat": "Poisson",
-          "time": 5,
-          "ings": [
-              "sushis du commerce"
-          ]
-      },
-      {
-          "id": 13,
-          "nom": "Omelette",
-          "cat": "Œufs",
-          "time": 15,
-          "ings": [
-              "œufs",
-              "lardons",
-              "gruyère"
-          ]
-      },
-      {
-          "id": 14,
-          "nom": "Œufs à la coque",
-          "cat": "Œufs",
-          "time": 10,
-          "ings": [
-              "œufs",
-              "pain",
-              "beurre"
-          ]
-      },
-      {
-          "id": 15,
-          "nom": "Poêlée de légumes",
-          "cat": "Végétarien",
-          "time": 20,
-          "ings": [
-              "courgette",
-              "poivron",
-              "oignon",
-              "tomate",
-              "herbes de Provence"
-          ]
-      },
-      {
-          "id": 16,
-          "nom": "Pommes de terre sautées",
-          "cat": "Végétarien",
-          "time": 25,
-          "ings": [
-              "pommes de terre",
-              "ail",
-              "persil",
-              "huile"
-          ]
-      },
-      {
-          "id": 17,
-          "nom": "Salade riz thon maïs",
-          "cat": "Salade",
-          "time": 15,
-          "ings": [
-              "riz",
-              "thon",
-              "maïs",
-              "tomate",
-              "vinaigrette"
-          ]
-      },
-      {
-          "id": 18,
-          "nom": "Salade avocat crevettes pamplemousse",
-          "cat": "Salade",
-          "time": 15,
-          "ings": [
-              "avocat",
-              "crevettes",
-              "pamplemousse",
-              "salade verte",
-              "vinaigrette"
-          ]
-      },
-      {
-          "id": 19,
-          "nom": "Roti de porc froid",
-          "cat": "Viande",
-          "time": 5,
-          "ings": []
-      }
+    {id:1,nom:"Spaghettis bolognaise",cat:"Pâtes & riz",time:30,ings:["pâtes","bœuf haché","tomate","oignon","carotte"]},
+    {id:2,nom:"Pâtes carbonara",cat:"Pâtes & riz",time:20,ings:["pâtes","lardons","œufs","parmesan","crème"]},
+    {id:3,nom:"Pâtes pesto",cat:"Pâtes & riz",time:15,ings:["pâtes","pesto","parmesan"]},
+    {id:4,nom:"Gratin de pâtes",cat:"Pâtes & riz",time:40,ings:["pâtes","gruyère","béchamel","lardons"]},
+    {id:5,nom:"Gnocchis poêlés & légumes",cat:"Pâtes & riz",time:20,ings:["gnocchis","courgette","tomate","basilic"]},
+    {id:6,nom:"Galettes complètes",cat:"Pizza & galettes",time:20,ings:["galettes blé noir","œufs","jambon","gruyère"]},
+    {id:7,nom:"Galettes chèvre miel",cat:"Pizza & galettes",time:20,ings:["galettes blé noir","chèvre","miel","noix"]},
+    {id:8,nom:"Croque monsieur",cat:"Pizza & galettes",time:15,ings:["pain de mie","jambon","gruyère","béchamel"]},
+    {id:9,nom:"Pizza fraîche",cat:"Pizza & galettes",time:5,ings:["pizza du commerce"]},
+    {id:10,nom:"Fajitas de poulet",cat:"Viande",time:25,ings:["poulet","poivrons","oignon","tortillas","épices tex-mex"]},
+    {id:11,nom:"Poêlée de saumon & riz",cat:"Poisson",time:20,ings:["saumon","riz","citron","haricots verts"]},
+    {id:12,nom:"Sushis Auchan",cat:"Poisson",time:5,ings:["sushis du commerce"]},
+    {id:13,nom:"Omelette",cat:"Œufs",time:15,ings:["œufs","lardons","gruyère"]},
+    {id:14,nom:"Œufs à la coque",cat:"Œufs",time:10,ings:["œufs","pain","beurre"]},
+    {id:15,nom:"Poêlée de légumes",cat:"Végétarien",time:20,ings:["courgette","poivron","oignon","tomate","herbes de Provence"]},
+    {id:16,nom:"Pommes de terre sautées",cat:"Végétarien",time:25,ings:["pommes de terre","ail","persil","huile"]},
+    {id:17,nom:"Salade riz thon maïs",cat:"Salade",time:15,ings:["riz","thon","maïs","tomate","vinaigrette"]},
+    {id:18,nom:"Salade avocat crevettes pamplemousse",cat:"Salade",time:15,ings:["avocat","crevettes","pamplemousse","salade verte","vinaigrette"]},
   ],
   desserts: [
     "Yaourts nature","Yaourts aux fruits","Petits suisses","Compote de fruits","Tiramisu",
@@ -498,36 +291,12 @@ const S = {
   ],
   criteres: { dessert:'oui', contraintes:[], priorites:['rapide','équilibré'] },
   menu: [], courses: [], nbPers: 5, nextId: 19,
-  version: 2
+  version: 1
 };
 
-/* ---- CLE API ---- */
-function getKey() { return document.getElementById('apiKey').value.trim(); }
-
-function saveKey() {
-  const k = getKey();
-  localStorage.setItem('mp_key', k);
-  const dot = document.getElementById('apiDot');
-  const notice = document.getElementById('noticeKey');
-  if (k.startsWith('sk-ant-') || k.startsWith('sk-')) {
-    dot.className='api-dot ok'; dot.title='Clé API valide';
-    notice.classList.remove('show');
-  } else if (k.length > 0) {
-    dot.className='api-dot err'; dot.title='Format de clé invalide';
-  } else {
-    dot.className='api-dot'; dot.title='Clé API non saisie';
-    notice.classList.add('show');
-  }
-}
-
 window.addEventListener('load', () => {
-  const savedKey = localStorage.getItem('mp_key');
-  if (savedKey) { document.getElementById('apiKey').value = savedKey; saveKey(); }
-  else { document.getElementById('noticeKey').classList.add('show'); }
-
   const savedPlats = localStorage.getItem('mp_plats');
   const savedVersion = parseInt(localStorage.getItem('mp_version')||'0');
-
   if (savedPlats && savedVersion >= S.version) {
     try {
       const parsed = JSON.parse(savedPlats);
@@ -537,12 +306,12 @@ window.addEventListener('load', () => {
       }
     } catch(e) {}
   } else {
-    // La version du fichier est plus récente — on utilise la liste du fichier
     savePlats();
-    localStorage.setItem('mp_version', S.version);
   }
   renderPlats();
 });
+
+/* ---- TABS ---- */
 
 function savePlats() {
   localStorage.setItem('mp_plats', JSON.stringify(S.plats));
@@ -589,15 +358,11 @@ function importPlats(event) {
 }
 
 async function callClaude(prompt, maxTokens=800) {
-  const key = getKey();
-  if (!key) { alert("Saisissez votre clé API Anthropic en haut à droite."); throw new Error("Clé API manquante"); }
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://cool-cake-c303.iprest.workers.dev/v1/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
+      'X-Service': 'claude'
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
@@ -607,8 +372,7 @@ async function callClaude(prompt, maxTokens=800) {
   });
   if (!res.ok) {
     const err = await res.json().catch(()=>({}));
-    const msg = err.error?.message || `Erreur HTTP ${res.status}`;
-    throw new Error(msg);
+    throw new Error(err.error?.message || `Erreur HTTP ${res.status}`);
   }
   const data = await res.json();
   return data.content[0].text.trim();
